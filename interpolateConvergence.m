@@ -72,7 +72,7 @@ function interpolateConvergence( fn ) %#ok<*DEFNU>
       dFn4 = matlabFunction( d4(x) );
       cFn5 = matlabFunction( c5(x) );
       dFn5 = matlabFunction( d5(x) );
-      g0 = @(x) ( x <= mid ) .* cFn0(x) + ( x > mid ) .* dFn0(x);
+%       g0 = @(x) ( x <= mid ) .* cFn0(x) + ( x > mid ) .* dFn0(x);
       g1 = @(x) ( x <= mid ) .* cFn1(x) + ( x > mid ) .* dFn1(x);
       g2 = @(x) ( x <= mid ) .* cFn2(x) + ( x > mid ) .* dFn2(x);
       g3 = @(x) ( x <= mid ) .* cFn3(x) + ( x > mid ) .* dFn3(x);
@@ -96,49 +96,54 @@ end
 
 function runRoutines( fn )
    range = 2.^(3:0.5:16);
-   error1 = ones( 1, length(range) );
-   error2 = error1;
+   errorMean = ones( 1, length(range) );
+   errorMax = errorMean;
    % xq is the set of query points
    xq = 0.1:0.01:1;
+   yqCorrect = fn( xq );
+   histErr = [];
    % ADD NEW INTERPOLATIONS TO TEST PLAN HERE
    types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip' };
-   slopes1 = ones( 1, 4 );
-   slopes2 = slopes1;
+   slopesMean = ones( 1, 4 );
+   slopesMax = slopesMean;
    plotTypes = { 'r.-', 'm.-', 'b.-', 'g.-', 'c.-', 'k.-' };
-   for i = 1:length(types)
-      index = 1;
+   for t = 1:length(types)
+      errIndex = 1;
       for r = range
-         x = linspace( 0, 1, r );
-         y = fn( x );
-      
-         % The Call function for each interpolation allows us to call all
-         % interpolations through a common format, while allowing for extra
-         % parameters to be included when needed
-         yq = feval( sprintf( '%sCall', types{i} ), x, y, xq );
-      
-         % We're currently using the average error to represent the
-         % accuracy of an interpolation technique
-         error1( index ) = mean( abs( yq - fn( xq ) ) );
-         error2( index ) = max( abs( yq - fn( xq ) ) );
-         index = index + 1;
+         yqDiff = interpolate( r, fn, types{t}, xq, yqCorrect );
+         errorMean( errIndex ) = mean( abs( yqDiff ) );
+         errorMax( errIndex ) = max( abs( yqDiff ) );
+         errIndex = errIndex + 1;
       end
+
+      for j = 1:40
+         yqDiff = interpolate( range( 10 ), fn, types{t}, xq, yqCorrect );
+         histErr = [ histErr yqDiff ];
+      end
+      
       subplot( 2, 1, 1 )
       hold on;
-      p = plot( range, error1, plotTypes{i} );
+      errorMeanTrunc = errorMean( errorMean > 10e-16 );
+      errorMeanTrunc( errorMeanTrunc == 0 ) = [];
+      errLength = length( errorMeanTrunc );
+      p = plot( range( 1:errLength ), errorMeanTrunc, plotTypes{t} );
       set( gca, 'xscale', 'log', 'yscale', 'log' )
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
-      fit = polyfit( log(range), log(error1), 1 );
-      slopes1(i) = fit(1);
+      fit = polyfit( log(range( 1:errLength ) ), log(errorMeanTrunc), 1 );
+      slopesMean(t) = fit(1);
       
       subplot( 2, 1, 2 )
       hold on;
-      p = plot( range, error2, plotTypes{i} );
+      errorMaxTrunc = errorMax( errorMax > 10e-16 );
+      errorMaxTrunc( errorMaxTrunc == 0 ) = [];
+      errLength = length( errorMaxTrunc );
+      p = plot( range( 1:errLength ), errorMaxTrunc, plotTypes{t} );
       set( gca, 'xscale', 'log', 'yscale', 'log' )
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
-      fit = polyfit( log(range), log(error2), 1 );
-      slopes2(i) = fit(1);
+      fit = polyfit( log(range( 1:errLength ) ), log(errorMaxTrunc), 1 );
+      slopesMax(t) = fit(1);
       %y = exp( fit(1) * log(range) + fit(2) );
       %loglog( range, y );
       hold on;
@@ -149,10 +154,11 @@ function runRoutines( fn )
    title( sprintf( 'Mean of error for fn: %s', func2str( fn ) ) );
    xlabel( 'Discretization' );
    ylabel( 'Error norm' );
-   legend( sprintf( 'piecewiseLinear: %d', slopes1(1) ), ...
-           sprintf( 'spline: %d', slopes1(2) ), ...
-           sprintf( 'cubicSpline: %d', slopes1(3) ), ...
-           sprintf( 'pchip: %d', slopes1(4) ) );
+   legend( sprintf( 'piecewiseLinear: %d', slopesMean(1) ), ...
+           sprintf( 'spline: %d', slopesMean(2) ), ...
+           sprintf( 'cubicSpline: %d', slopesMean(3) ), ...
+           sprintf( 'pchip: %d', slopesMean(4) ), ...
+           'Location', 'southwest' );
    loglog( range, range.^-1, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -1
    loglog( range, range.^-2, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -2
    loglog( range, range.^-3, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -3
@@ -163,16 +169,38 @@ function runRoutines( fn )
    title( sprintf( 'Max of error for fn: %s', func2str( fn ) ) );
    xlabel( 'Discretization' );
    ylabel( 'Error norm' );
-   legend( sprintf( 'piecewiseLinear: %d', slopes2(1) ), ...
-           sprintf( 'spline: %d', slopes2(2) ), ...
-           sprintf( 'cubicSpline: %d', slopes2(3) ), ...
-           sprintf( 'pchip: %d', slopes2(4) ) );
+   legend( sprintf( 'piecewiseLinear: %d', slopesMax(1) ), ...
+           sprintf( 'spline: %d', slopesMax(2) ), ...
+           sprintf( 'cubicSpline: %d', slopesMax(3) ), ...
+           sprintf( 'pchip: %d', slopesMax(4) ), ...
+           'Location', 'southwest' );
    loglog( range, range.^-1, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -1
    loglog( range, range.^-2, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -2
    loglog( range, range.^-3, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -3
    loglog( range, range.^-4, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -4
    
    linkaxes( [ s1, s2 ], 'x' );
+   
+   figure;
+   hist( histErr, 50 );
+   title( sprintf( 'Histogram of error for fn: %s', func2str( fn ) ) );
+end
+
+function yqDiff = interpolate( r, fn, interp, xq, yqCorrect )
+   x = linspace( 0, 1, r );
+   d = ( x(2) - x(1) ) / 2;
+   x(2:length(x)-1) = x(2:length(x)-1) + d*rand( 1, length( x ) - 2 ) - d/2;
+   y = fn( x );
+   
+   % The Call function for each interpolation allows us to call all
+   % interpolations through a common format, while allowing for extra
+   % parameters to be included when needed
+   yq = feval( sprintf( '%sCall', interp ), x, y, xq );
+      
+   % We're currently using the average and maximum error to represent the
+   % accuracy of an interpolation technique
+   yqDiff = yq - yqCorrect;
+
 end
 
 % Call methods for the interpolations in the test plan

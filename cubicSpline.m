@@ -5,10 +5,8 @@ function yq = cubicSpline( x, y, xq )
 % This interpolation follows the implementation described in the
 % Burden-Faires text (p146)
    n = length(x);
-
-   for i = 1:n-1
-      h(i) = x(i+1) - x(i);
-   end
+   
+   h = circshift( x, [0 -1] ) - x;
    h(length(y)) = h(1);
    
    yM = y - circshift(y',+1)';
@@ -17,15 +15,14 @@ function yq = cubicSpline( x, y, xq )
    
    a = (3./h) .* yP - (3./hM) .* yM;
    
+   l = ones( 1, n );
+   u = ones( 1, n );
    l(1) = 1;
    u(1) = 0;
    z(1) = 0;
-   
-   xP = circshift(x',-1)';
-   xM = circshift(x',+1)';
-   uM = circshift(u',+1)';
-   hM = circshift(h',+1)';
-   zM = circshift(z',+1)';
+   l(n) = 1;
+   z(n) = 0;
+   c(n) = 0;
    
    for i = 2:n-1
       l(i) = 2 * ( x(i+1) - x(i-1) ) - h(i-1) * u(i-1);
@@ -36,15 +33,13 @@ function yq = cubicSpline( x, y, xq )
    %u = h ./ l;
    %z = ( a - ( hM .* zM ) ) ./ l;
    
-   l(n) = 1;
-   z(n) = 0;
-   c(n) = 0;
-   
    for j = n-1:-1:1
       c(j) = z(j) - u(j) * c(j+1);
       b(j) = ( y(j+1) - y(j) ) / h(j) - h(j) * ( c(j+1) + 2 * c(j) ) / 3;
       d(j) = ( c(j+1) - c(j) ) / ( 3 * h(j) );
    end
+   
+   yq = xq;
    
    for i = 1:length(xq)
       xqi = xq(i);

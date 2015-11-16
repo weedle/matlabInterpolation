@@ -1,5 +1,5 @@
-function yq = cubicClamped( x, y, xq, fpo, fpn )
-% CUBICSPLINE - A natural cubic spline interpolation
+function yq = cubicComplete( x, y, xq, fpo, fpn )
+% CUBICSPLINE - A complete cubic spline interpolation
 % cubicSpline( x, y, xq, fpo, fpn ) interpolates the data points (x,y) and provides 
 % the values obtained when evaluating the interpolation at the points xq
 % fpo and fpn are the derivative values at x0 and xn, respectively

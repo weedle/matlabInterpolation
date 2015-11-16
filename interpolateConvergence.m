@@ -13,6 +13,10 @@ function interpolateConvergence( fn ) %#ok<*DEFNU>
 % *************************************************************************
    global fnCur;
    fnCur = str2func( fn );
+   global wantRand;
+   global wantHist;
+   wantHist = 1;
+   wantRand = 1;
    
    if( strcmp( fn, 'derivs' ) == 0 )
       figure();
@@ -83,11 +87,19 @@ function interpolateConvergence( fn ) %#ok<*DEFNU>
       fns = { f1, f2, f3, f4, f5 };
       %fns = { g1, g2, g3, g4, g5 };
       
+      wantRand = 0;    
       for i = 1:length(fns);
          fnCur = fns{i};
          %figure();
          %plot( x, feval( fnCur, x ), 'r.-' );
          %title( func2str( fnCur ) );
+         figure();
+         runRoutines( fnCur );
+      end
+      
+      wantRand = 1;
+      for i = 1:length(fns);
+         fnCur = fns{i};
          figure();
          runRoutines( fnCur );
       end
@@ -187,8 +199,9 @@ function runRoutines( fn )
 end
 
 function yqDiff = interpolate( r, fn, interp, xq, yqCorrect )
+   global wantRand;
    x = linspace( 0, 1, r );
-   d = ( x(2) - x(1) ) / 2;
+   d = wantRand * ( x(2) - x(1) ) / 2;
    x(2:length(x)-1) = x(2:length(x)-1) + d*rand( 1, length( x ) - 2 ) - d/2;
    y = fn( x );
    
@@ -221,7 +234,9 @@ function yq = pchipCall( x, y, xq )
 end
 
 function yq = cubicSplineCall( x, y, xq )
-   yq = feval( 'cubicSpline', x, y, xq );
+   fpo = ( y(2) - y(1) ) / ( x(2) - x(1) );
+   fpn = ( y(length(y)) - y(length(y)-1) ) / ( x(length(x)) - x(length(x)-1) );
+   yq = feval( 'cubicComplete', x, y, xq, fpo, fpn );
 end
 
 % Functions to test

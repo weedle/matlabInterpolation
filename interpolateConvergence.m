@@ -29,6 +29,8 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
          f = fns{i};
          fig = figure();
          runRoutines( types, F(i,:), f, 0, fig );
+         fig = figure();
+         runRoutines( types, F(i,:), f, 1, fig );
       end
    elseif( strcmp( mode, 'plot derivs' ) == 1 )
       fns = getFns;
@@ -94,9 +96,11 @@ function genHistograms( types, mode, fn, randEnabled )
       fig = figure;
       hist( histVals, 50 );    
       plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
-      fig = figure;
-      hist( histMeans, 50 );    
-      plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
+      if( randEnabled )
+         fig = figure;
+         hist( histMeans, 50 );    
+         plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
+      end
    end
    
    %plotTypes = { 'r.-', 'm.-', 'b.-', 'g.-', 'c.-', 'k.-' };

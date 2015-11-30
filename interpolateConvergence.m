@@ -58,6 +58,8 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
       runRoutines( types, mode, str2func( mode ), 0, fig );
       fig = figure();
       runRoutines( types, mode, str2func( mode ), 1, fig );
+      genHistograms( types, mode, str2func( mode ), 0 );
+      genHistograms( types, mode, str2func( mode ), 1 );
    end
 end
 
@@ -65,6 +67,7 @@ function genHistograms( types, mode, fn, randEnabled )
 
    % Initialization
    range = 2.^8;
+   types = { 'piecewiseLinear', 'spline' };
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
    yqCorrect = fn( xq );
@@ -72,13 +75,14 @@ function genHistograms( types, mode, fn, randEnabled )
    
    for t = 1:length(types)
       histVals = [];
+      histMeans = ones( 1, randTrials );
       for r = 1:length(range)
          for j = 1:randTrials
             rng('shuffle')
             xVals = getDomain( range, randEnabled );
             x = xVals( r, 1:floor(range(r)) );
             y = fn( x );
-            [ ~, ~, ~, yqDiff ] = ...
+            [ histMeans(j), ~, ~, yqDiff ] = ...
                 interpolate( x, y, types{t}, xq, yqCorrect );
             % Warning is because I'm adding values to histVals in an
             % inefficient manner. Indexing it doesn't seem to be worth it
@@ -90,6 +94,9 @@ function genHistograms( types, mode, fn, randEnabled )
       fig = figure;
       hist( histVals, 50 );    
       plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
+      fig = figure;
+      hist( histMeans, 50 );    
+      plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
    end
    
    %plotTypes = { 'r.-', 'm.-', 'b.-', 'g.-', 'c.-', 'k.-' };
@@ -154,7 +161,7 @@ end
 
 function fit = plotError( range, errorRow, plotType, fig )
    figure(fig);
-      errorMeanTrunc = errorRow( errorRow > 10e-16 );
+      errorMeanTrunc = errorRow( errorRow > 10e-15 );
       errorMeanTrunc( errorMeanTrunc == 0 ) = [];
       errLength = length( errorMeanTrunc );
       p = loglog( range(1:errLength), errorRow( 1:errLength ), plotType );
@@ -322,4 +329,24 @@ end
 % Functions to test
 function y = sinTest( x )
    y = x .* sin( x / 8 );
+end
+
+function y = sinNormal( x )
+   y = sin( x );
+end
+
+function y = poly1( x )
+   y = x.^2 + 3.*x;
+end
+
+function y = poly2( x )
+   y = -x.^4 + 5.*x.^3 - 7.*x + 10;
+end
+
+function y = npoly2( x )
+   y = -( -x.^4 + 5.*x.^3 - 7.*x + 10 );
+end
+
+function y = tanNormal( x )
+   y = tan( x );
 end

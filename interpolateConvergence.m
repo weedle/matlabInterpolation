@@ -228,10 +228,10 @@ function xVals = getDomain( range, randEnabled )
 end
 
 function  fns = getFns
-   mid = 0.5;
+   mid = 0.43;
    syms x
    a1(x) = 3 .* sin(20.*x) + 8;
-   b1(x) = 2 .* cos(20.*x) + 2;
+   b1(x) = 2 .* cos(43.*x) + 2;
    a2(x) = int( a1(x), 0, x );
    b2(x) = int( b1(x), mid, x ) + a2(mid);
    a3(x) = int( a2(x), 0, x );

@@ -69,11 +69,11 @@ function genHistograms( types, mode, fn, randEnabled )
 
    % Initialization
    range = 2.^8;
-   types = { 'piecewiseLinear', 'spline' };
+   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip' };
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
    yqCorrect = fn( xq );
-   randTrials = 15 * randEnabled + 1;
+   randTrials = 4000 * randEnabled + 1;
    
    for t = 1:length(types)
       histVals = [];
@@ -93,12 +93,15 @@ function genHistograms( types, mode, fn, randEnabled )
             histVals = [ histVals yqDiff ]; %#ok<AGROW>
          end
       end
-      fig = figure;
-      hist( histVals, 50 );    
-      plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
+      %fig = figure;
+      %hist( histVals, 50 );    
+      %plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
       if( randEnabled )
          fig = figure;
-         hist( histMeans, 50 );    
+         hist( histMeans, 100 );
+         [H, pValue, W] = swtest( histMeans( 1:min( length( histMeans ), 5000 ) ) );
+         display( types{t} );
+         display( pValue );
          plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
       end
    end

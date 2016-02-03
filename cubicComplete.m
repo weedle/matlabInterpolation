@@ -7,6 +7,7 @@ function yq = cubicComplete( x, y, xq, fpo, fpn )
 % Burden-Faires text (p148)
    n = length(x);
 
+   h = 0 * ones( 1, length(x) );
    for i = 1:n-1
       h(i) = x(i+1) - x(i);
    end
@@ -17,6 +18,10 @@ function yq = cubicComplete( x, y, xq, fpo, fpn )
    for i = 2:n-1
       alpha(i) = ( 3/h(i) ) * ( y(i+1) - y(i) ) - ( 3/h(i-1) ) * ( y(i) - y(i-1) );
    end
+   
+   l = 0 * h;
+   u = l;
+   z = l;
    
    l(1) = 2*h(1);
    u(1) = 0.5;
@@ -39,6 +44,8 @@ function yq = cubicComplete( x, y, xq, fpo, fpn )
       b(j) = ( y(j+1) - y(j) ) / h(j) - h(j) * ( c(j+1) + 2 * c(j) ) / 3;
       d(j) = ( c(j+1) - c(j) ) / ( 3 * h(j) );
    end
+   
+   yq = 0 * xq;
    
    for i = 1:length(xq)
       xqi = xq(i);

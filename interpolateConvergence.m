@@ -9,6 +9,7 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
 % spline - The native matlab cubic spline
 % pchip - The matlab piecewise cubic hermite spline
 % cubicSpline - A complete cubic spline
+% quintic - A quintic spline
 % *************************************************************************
 
 % Set random number generator to default
@@ -16,15 +17,22 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
    set(0,'defaultfigureposition',[0 0 800 800]')
    
    % ADD NEW INTERPOLATIONS TO TEST PLAN HERE
-   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip' };
-
+   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip', 'quintic' };
+   fns = getFns;
+   F = [ 'f1'; 'f2'; 'f3'; 'f4'; 'f5' ];
+      
    if( strcmp( mode, 'histogram' ) == 1 )
        mode = 'sinTest';
       genHistograms( types, mode, str2func( mode ), 0 );
       genHistograms( types, mode, str2func( mode ), 1 );
+   elseif( strcmp( mode, 'quintic' ) == 1 )
+      types = { 'cubicSpline', 'spline', 'quintic' };
+      for i = length( fns )
+         f = fns{i};
+         fig = figure();
+         runRoutines( types, F(i,:), f, 0, fig );
+      end
    elseif( strcmp( mode, 'derivs' ) == 1 )
-      fns = getFns;
-      F = [ 'f1'; 'f2'; 'f3'; 'f4'; 'f5' ];
       for i = 1:length( fns )
          f = fns{i};
          fig = figure();
@@ -33,8 +41,6 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
          runRoutines( types, F(i,:), f, 1, fig );
       end
    elseif( strcmp( mode, 'plot derivs' ) == 1 )
-      fns = getFns;
-      F = [ 'f1'; 'f2'; 'f3'; 'f4'; 'f5' ];
       for i = 1:length( fns )
          f = fns{i};
          figure();
@@ -55,13 +61,20 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
        range = 2^4;
       getDomain( range, 0 );
       getDomain( range, 1 );
-   else
+   elseif( strcmp( mode, 'histograms' ) == 1 )
       fig = figure();
       runRoutines( types, mode, str2func( mode ), 0, fig );
       fig = figure();
       runRoutines( types, mode, str2func( mode ), 1, fig );
       genHistograms( types, mode, str2func( mode ), 0 );
       genHistograms( types, mode, str2func( mode ), 1 );
+   else
+      % mode is the string name of the function to test
+      types = { mode };
+      mode = 'poly8';
+      fig = figure();
+      runRoutines( types, mode, str2func( mode ), 0, fig );
+      
    end
 end
 
@@ -69,7 +82,7 @@ function genHistograms( types, mode, fn, randEnabled )
 
    % Initialization
    range = 2.^8;
-   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip' };
+   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip', 'quintic' };
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
    yqCorrect = fn( xq );
@@ -116,7 +129,8 @@ end
 function runRoutines( types, mode, fn, randEnabled, fig )
 
    % Initialization
-   range = 2.^(3:0.5:16);
+   range = 2.^(3:0.5:10);
+   %range = 2.^(3:0.5:16);
    xVals = getDomain( range, randEnabled );
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
@@ -333,6 +347,10 @@ function yq = cubicSplineCall( x, y, xq )
    yq = feval( 'cubicComplete', x, y, xq, fpo, fpn );
 end
 
+function yq = quinticCall( x, y, xq )
+   yq = feval( 'quintic', x, y, xq );
+end
+
 % Functions to test
 function y = sinTest( x )
    y = x .* sin( x / 8 );
@@ -352,6 +370,10 @@ end
 
 function y = npoly2( x )
    y = -( -x.^4 + 5.*x.^3 - 7.*x + 10 );
+end
+
+function y = poly8( x )
+   y = x.^8 - 35.*x.^7 + 14.*x.^5 - 105.*x.^3 + 5.*x.^2 + 75.*x + 31;
 end
 
 function y = tanNormal( x )

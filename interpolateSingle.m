@@ -91,7 +91,8 @@ function xVals = getDomain( range, randEnabled )
    xVals = 0 * ones( length( range ),  range( length( range ) ) );
    separationFactor = 4;
    for r = 1:length(range)
-      xVals( r, 1:floor(range(r)) ) = linspace( 0, 1, range(r) );
+      f = floor( range(r) );
+      xVals( r, 1:floor(range(r)) ) = -cos( ( 2.*(1:f) - 1 ) ./ ( 2*f ) * pi )/2+0.5;
    end
    
    for r = 1:length(range)

@@ -17,14 +17,14 @@ function interpolateConvergence( spline ) %#ok<*DEFNU>
    set(0,'defaultfigureposition',[0 0 800 800]')
    
    param = 'poly8';
-   %fig = figure();
-   runRoutines( spline, param, 0, 0 );
+   fig = figure();
+   runRoutines( spline, param, 0, fig );
 end
 
 function runRoutines( type, fn, randEnabled, fig )
 
    % Initialization
-   range = 2.^(3:0.5:10);
+   range = 2.^(3:0.5:13);
    %range = 2.^(3:0.5:16);
    xVals = getDomain( range, randEnabled );
    % xq is the set of query points
@@ -47,7 +47,7 @@ function runRoutines( type, fn, randEnabled, fig )
    %subplot( 2, 1, 1 )
    %plotErrorMain( range, errorMean, fig, 1 )
    %subplot( 2, 1, 2 )
-   plotErrorMain( range, errorMax, fig, 0 )
+   plotErrorMain( range, errorMax, fig, 1 )
 end
 
 function slope = plotErrorMain( range, errorM, fig, plotEnabled )
@@ -74,7 +74,7 @@ function fit = plotError( range, errorRow, fig, plotEnabled )
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
    end
-   fit = polyfit( log(range( 1:errLength ) ), log( errorRow(1:errLength) ), 1 );
+   fit = polyfit( log(range( 1:errLength ) ), log( errorRow( 1:errLength ) ), 1 );
    fit = fit(1);
 end
 
@@ -109,7 +109,10 @@ function [ diffMean, diffMax, yq, yqDiff ] = interpolate( x, y, interp, xq, yqCo
    % interpolations through a common format, while allowing for extra
    % parameters to be included when needed
    yq = feval( interp, x, y, xq );
-      
+   %figure;
+   %hold on;
+   %plot( x, y, 'r-' );
+   %plot( xq, yq, 'b-' );
    % We're currently using the average and maximum error to represent the
    % accuracy of an interpolation technique
    yqDiff = yq - yqCorrect;

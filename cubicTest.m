@@ -1,104 +1,50 @@
-function interpolateConvergence( mode ) %#ok<*DEFNU>
-% INTERPOLATECONVERGENCE: Tests various convergent algorithms
-% interpolateConvergence( mode ) runs tests using various interpolation
-% methods, and displays convergence plots and error histograms
-% So far, the algorithms tested are:
-% *************************************************************************
-% UPDATE IF ADDING NEW ALGORITHM TO TEST PLAN
-% piecewiseLinear - A piecewise linear interpolation
-% spline - The native matlab cubic spline
-% pchip - The matlab piecewise cubic hermite spline
-% cubicSpline - A complete cubic spline
-% quintic - A quintic spline
-% *************************************************************************
-
+function cubicTest %#ok<*DEFNU>
 % Set random number generator to default
    rng('default')
    set(0,'defaultfigureposition',[0 0 800 800]')
+   global deg;
+   deg = 12;
    
    % ADD NEW INTERPOLATIONS TO TEST PLAN HERE
-   global types;
-   global range;
-   global randEnabled;
-   types = { 'piecewiseLinear', 'spline', 'cubicSpline', 'pchip', 'quintic' };
-   range = 2.^(3:0.5:12);
+   types = { 'spline', 'cubicSpline', 'quintic' };
    fns = getFns;
-   F = [ 'f1'; 'f2'; 'f3'; 'f4'; 'f5' ];
-      
-   if( strcmp( mode, 'histogram' ) == 1 )
-       mode = 'sinTest';
-      genHistograms( types, mode, str2func( mode ), 0 );
-      genHistograms( types, mode, str2func( mode ), 1 );
-   elseif( strcmp( mode, 'quintic' ) == 1 )
-      types = { 'cubicSpline', 'spline', 'quintic' };
-      for i = length( fns )
-         f = fns{i};
-         fig = figure();
-         randEnabled = 0;
-         runRoutines( F(i,:), f, fig );
-      end
-   elseif( strcmp( mode, 'derivs' ) == 1 )
-      for i = 1:length( fns )
-         f = fns{i};
-         randEnabled = 0;
-         fig = figure();
-         runRoutines( F(i,:), f, fig );
-         randEnabled = 1;
-         fig = figure();
-         runRoutines( F(i,:), f, fig );
-      end
-   elseif( strcmp( mode, 'plot derivs' ) == 1 )
-      for i = 1:length( fns )
-         f = fns{i};
-         figure();
-         x = linspace( 0, 1, 2^4 );
-         y = f(x);
-         xq = 0.1:0.01:0.9;
-         yqCorrect = f(xq);
-              [ ~, ~, yq, ~ ] = ...
-         interpolate( x, y, 'cubicSpline', xq, yqCorrect );
-         subplot( 2, 1, 1 );
-         plot( xq, yqCorrect, 'r.-' );
-         title( sprintf( 'Correct values for function: %s', F(i,:) ) );
-         subplot( 2, 1, 2 );
-         plot( xq, yq, 'b.-' );
-         title( sprintf( 'Interpolation values for function: %s', F(i,:) ) );
-      end
-   elseif( strcmp( mode, 'domain' ) == 1 )
-       range = 2^4;
-      getDomain( range, 0 );
-      getDomain( range, 1 );
-   elseif( strcmp( mode, 'histograms' ) == 1 )
+   %F = { 'f5', 'polynomial deg 8', 'sin(x)', 'complicated sin' };
+   %f = { fns{5}, @poly8, @sinNormal, @sinTest };
+   F = { '5', '5b', '6', '6b', '7', '7b', '8', '8b', ...
+         'sin1', 'sin2', 'sin3', 'sin4' };
+   f = { @poly5, @poly5b, @poly6, @poly6b, @poly7, @poly7b, @poly8, @poly8b, ...
+         @sinTest, @sinTest2, @sinTest3, @sinTest4 };
+   for i = 1:8
       fig = figure();
-      randEnabled = 0;
-      runRoutines( mode, @sinTest, fig );
-      fig = figure();
-      randEnabled = 1;
-      runRoutines( mode, @sinTest, fig );
-      
-      
-      randEnabled = 0;
-      genHistograms( mode, @sinTest );
-      randEnabled = 1;
-      genHistograms( mode, @sinTest );
-   else
-      % mode is the string name of the function to test
-      types = { mode };
-      mode = 'poly8';
-      fig = figure();
-      randEnabled = 1;
-      runRoutines( mode, str2func( mode ), fig );
-      
+      runRoutines( types, F{i}, f{i}, 0, fig );
    end
+   
+   fig = figure();
+   runRoutines( types, sprintf( 'deg: %x', deg ), @polyX, 0, fig );
+   
+   x = 0:0.01:5;
+   y = polyX( x );
+   xq = 0.1:0.001:5;
+   
+   figure;
+   plot( x, y, 'r-' );
+   hold on;
+   plot( xq, cubicSpline( x, y, xq ), 'b-' );
+   legend( 'actual', 'spline' );
+   title( 'Function' );
+   figure;
+   plot( xq, cubicSpline( x, y, xq ) - polyX( xq ), 'g-' );
+   title( 'error' );
+   %fig = figure();
+   %runRoutines( types, F, f, 1, fig );
 end
 
-function runRoutines( fnString, fn, fig )
-   global types;
-   global range;
-   global randEnabled;
+function runRoutines( types, mode, fn, randEnabled, fig )
+
    % Initialization
+   range = 2.^(3:0.05:11);
    %range = 2.^(3:0.5:16);
-   xVals = getDomain();
+   xVals = getDomain( range, randEnabled );
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
    yqCorrect = fn( xq );
@@ -120,82 +66,17 @@ function runRoutines( fnString, fn, fig )
    
    plotTypes = { 'r.-', 'm.-', 'b.-', 'g.-', 'c.-', 'k.-' };
    subplot( 2, 1, 1 )
-   plotErrorMain( fnString, errorMean, plotTypes, fig, 'Mean' )
+   plotErrorMain( range, types, mode, errorMean, plotTypes, fig, randEnabled, 'Mean' )
    subplot( 2, 1, 2 )
-   plotErrorMain( fnString, errorMax, plotTypes, fig, 'Max' )
+   plotErrorMain( range, types, mode, errorMax, plotTypes, fig, randEnabled, 'Max' )
 end
 
-function [ diffMean, diffMax, yq, yqDiff ] = interpolate( x, y, interp, xq, yqCorrect )
-   % The Call function for each interpolation allows us to call all
-   % interpolations through a common format, while allowing for extra
-   % parameters to be included when needed
-   yq = feval( sprintf( '%sCall', interp ), x, y, xq );
-      
-   % We're currently using the average and maximum error to represent the
-   % accuracy of an interpolation technique
-   yqDiff = yq - yqCorrect;
-   
-   diffMean = mean( abs( yqDiff ) );
-   diffMax = max( abs( yqDiff ) );
-end
-
-function genHistograms( mode, fn )
-   global types;
-   global range;
-   global randEnabled;
-   % Initialization
-   % xq is the set of query points
-   xq = linspace( 0.1, 0.9, 1e2 );
-   yqCorrect = fn( xq );
-   randTrials = 4000 * randEnabled + 1;
-   
-   for t = 1:length(types)
-      histVals = [];
-      histMeans = ones( 1, randTrials );
-      for r = 1:length(range)
-         for j = 1:randTrials
-            rng('shuffle')
-            xVals = getDomain;
-            x = xVals( r, 1:floor(range(r)) );
-            y = fn( x );
-            [ histMeans(j), ~, ~, yqDiff ] = ...
-                interpolate( x, y, types{t}, xq, yqCorrect );
-            % Warning is because I'm adding values to histVals in an
-            % inefficient manner. Indexing it doesn't seem to be worth it
-            % since this function runs pretty fast anyways. If speed
-            % becomes an issue, I'll add proper indexing and preallocation
-            histVals = [ histVals yqDiff ]; %#ok<AGROW>
-         end
-      end
-      %fig = figure;
-      %hist( histVals, 50 );    
-      %plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
-      if( randEnabled )
-         fig = figure;
-         hist( histMeans, 100 );
-         [H, pValue, W] = swtest( histMeans( 1:min( length( histMeans ), 5000 ) ) );
-         display( types{t} );
-         display( pValue );
-         plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
-      end
-   end
-   
-   %plotTypes = { 'r.-', 'm.-', 'b.-', 'g.-', 'c.-', 'k.-' };
-   %subplot( 2, 1, 1 )
-   %plotErrorMain( range, types, mode, errorMean, plotTypes, fig, randEnabled, 'Mean' )
-   %subplot( 2, 1, 2 )
-   %plotErrorMain( range, types, mode, errorMax, plotTypes, fig, randEnabled, 'Max' )
-end
-
-function plotErrorMain( mode, errorM, plotTypes, fig, meanOrMax )
-   global types;
-   global range;
-   global randEnabled;
+function plotErrorMain( range, types, mode, errorM, plotTypes, fig, randEnabled, meanOrMax )
    slopesM = ones( 1, length(types) );
    % Plot thicker lines for data used in fit
    for t = 1:length(types)
       % Plot error and retrieve fit of slope
-      slopesM(t) = plotError(  errorM( t,: ), ...
+      slopesM(t) = plotError( range, errorM( t,: ), ...
                                  plotTypes{t}, fig );
       hold on;
    end
@@ -212,17 +93,16 @@ function plotErrorMain( mode, errorM, plotTypes, fig, meanOrMax )
    plotConstSlopes( fig, range );
 end
 
-function fit = plotError( errorRow, plotType, fig )
-   global range;
+function fit = plotError( range, errorRow, plotType, fig )
    figure(fig);
-   errorMeanTrunc = errorRow( errorRow > 10e-15 );
-   errorMeanTrunc( errorMeanTrunc == 0 ) = [];
-   errLength = length( errorMeanTrunc );
-   p = loglog( range(1:errLength), errorRow( 1:errLength ), plotType );
-   set( p, 'LineWidth', 2 );
-   set( p, 'MarkerSize', 10 );
-   fit = polyfit( log(range( 1:errLength ) ), log( errorRow(1:errLength) ), 1 );
-   fit = fit(1);
+      errorMeanTrunc = errorRow( errorRow > 10e-15 );
+      errorMeanTrunc( errorMeanTrunc == 0 ) = [];
+      errLength = length( errorMeanTrunc );
+      p = loglog( range(1:errLength), errorRow( 1:errLength ), plotType );
+      set( p, 'LineWidth', 2 );
+      set( p, 'MarkerSize', 10 );
+      fit = polyfit( log(range( 1:errLength ) ), log( errorRow(1:errLength) ), 1 );
+      fit = fit(1);
 end
 
 function plotLabels( fig, types, mode, randEnabled, slopesM, meanOrMax )
@@ -261,13 +141,11 @@ function plotConstSlopes( fig, range )
    loglog( range, range.^-4, '-', 'Color', [ 0.75 0.75 0.75 ] ); %slope -4
 end
 
-function xVals = getDomain()
-   global range;
-   global randEnabled;
+function xVals = getDomain( range, randEnabled )
    xVals = 0 * ones( length( range ),  range( length( range ) ) );
    separationFactor = 4;
    for r = 1:length(range)
-      f = floor( range(r) );
+       f = floor(range(r));
       xVals( r, 1:floor(range(r)) ) = -cos( ( 2.*(1:f) - 1 ) ./ ( 2*f ) * pi )/2+0.5;
    end
    
@@ -342,6 +220,24 @@ function  fns = getFnsPoly
    fns = { g1, g2, g3, g4, g5 };
 end
 
+function [ diffMean, diffMax, yq, yqDiff ] = interpolate( x, y, interp, xq, yqCorrect )
+   
+   % The Call function for each interpolation allows us to call all
+   % interpolations through a common format, while allowing for extra
+   % parameters to be included when needed
+   yq = feval( sprintf( '%sCall', interp ), x, y, xq );
+      
+   % We're currently using the average and maximum error to represent the
+   % accuracy of an interpolation technique
+   yqDiff = yq - yqCorrect;
+   
+   diffMean = mean( abs( yqDiff ) );
+   diffMax = max( abs( yqDiff ) );
+
+end
+
+
+
 % Call methods for the interpolations in the test plan
 function yq = P1LagrangeCall( x, y, xq )
    yq = feval( 'P1Lagrange', x, y, xq );
@@ -374,6 +270,21 @@ function y = sinTest( x )
    y = x .* sin( x / 8 );
 end
 
+
+function y = sinTest2( x )
+   y = x.^2 .* sin( x / 18 );
+end
+
+
+function y = sinTest3( x )
+   y = x .* sin( x / 6 ).^2;
+end
+
+
+function y = sinTest4( x )
+   y = sin( x / 8 ) .* cos( x / 13 );
+end
+
 function y = sinNormal( x )
    y = sin( x );
 end
@@ -391,7 +302,40 @@ function y = npoly2( x )
 end
 
 function y = poly8( x )
-   y = x.^8 - 35.*x.^7 + 14.*x.^5 - 105.*x.^3 + 5.*x.^2 + 75.*x + 31;
+   y = x.^8 + 3.*x.^7 - 33.*x.^5 + 20.*x.^3 - 15.*x.^2 + 15.*x + 64;
+end
+
+function y = poly8b( x )
+   y = -4.*x.^8 + 17.*x.^6 + 45.*x.^4 - 3.*x.^3 - x + 13;
+end
+
+function y = poly7( x )
+   y = -3.*x.^7 + 5.*x.^6 - 15.*x.^3 + 23.*x.^2 + 43.*x;
+end
+
+function y = poly7b( x )
+   y = x.^7 + 8.*x.^4 - 3.*x.^5 + 75.*x.^4 - 17.*x.^2 - 7.*x + 12;
+end
+
+function y = poly6( x )
+   y = -3.*x.^6 + 5.*x.^5 - 15.*x.^3 + 23.*x.^2 + 43.*x;
+end
+
+function y = poly6b( x )
+   y = x.^6 + 8.*x.^4 - 3.*x.^3 + 75.*x.^2 - 7.*x + 12;
+end
+
+function y = poly5( x )
+   y = -3.*x.^5 + 5.*x.^4 - 15.*x.^3 + 23.*x.^2 + 43.*x;
+end
+
+function y = poly5b( x )
+   y = x.^5 + 8.*x.^4 - 3.*x.^3 + 75.*x.^2 - 7.*x + 12;
+end
+
+function y = polyX( x )
+   global deg;
+   y = x.^deg;
 end
 
 function y = tanNormal( x )

@@ -7,20 +7,20 @@ function cubicTest %#ok<*DEFNU>
    
    % ADD NEW INTERPOLATIONS TO TEST PLAN HERE
    types = { 'spline', 'cubicSpline', 'quintic' };
-   fns = getFns;
+   %fns = getFns;
    %F = { 'f5', 'polynomial deg 8', 'sin(x)', 'complicated sin' };
    %f = { fns{5}, @poly8, @sinNormal, @sinTest };
-   F = { '5', '5b', '6', '6b', '7', '7b', '8', '8b', ...
-         'sin1', 'sin2', 'sin3', 'sin4' };
-   f = { @poly5, @poly5b, @poly6, @poly6b, @poly7, @poly7b, @poly8, @poly8b, ...
-         @sinTest, @sinTest2, @sinTest3, @sinTest4 };
-   for i = 1:8
-      fig = figure();
-      runRoutines( types, F{i}, f{i}, 0, fig );
-   end
+   %F = { '5', '5b', '6', '6b', '7', '7b', '8', '8b', ...
+   %      'sin1', 'sin2', 'sin3', 'sin4' };
+   %f = { @poly5, @poly5b, @poly6, @poly6b, @poly7, @poly7b, @poly8, @poly8b, ...
+   %      @sinTest, @sinTest2, @sinTest3, @sinTest4 };
+   %for i = 1:8
+   %   fig = figure();
+   %   runRoutines( types, F{i}, f{i}, 0, fig );
+   %end
    
    fig = figure();
-   runRoutines( types, sprintf( 'deg: %x', deg ), @polyX, 0, fig );
+   runRoutines( types, sprintf( 'deg: %d', deg ), @polyX, 0, fig );
    
    x = 0:0.01:5;
    y = polyX( x );
@@ -147,6 +147,7 @@ function xVals = getDomain( range, randEnabled )
    for r = 1:length(range)
        f = floor(range(r));
       xVals( r, 1:floor(range(r)) ) = -cos( ( 2.*(1:f) - 1 ) ./ ( 2*f ) * pi )/2+0.5;
+      %xVals( r, 1:floor(range(r)) ) = linspace( 0, 1, range(r) );
    end
    
    for r = 1:length(range)

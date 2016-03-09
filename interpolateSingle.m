@@ -1,4 +1,4 @@
-function slope = interpolateConvergence( spline ) %#ok<*DEFNU>
+function returnStruct = interpolateConvergence( spline ) %#ok<*DEFNU>
 % INTERPOLATECONVERGENCE: Tests various convergent algorithms
 % interpolateConvergence( mode ) runs tests using various interpolation
 % methods, and displays convergence plots and error histograms
@@ -17,12 +17,12 @@ function slope = interpolateConvergence( spline ) %#ok<*DEFNU>
    set(0,'defaultfigureposition',[0 0 800 800]')
    
    param = 'poly8';
-   fig = figure();
-   %fig = 0;
-   slope = runRoutines( spline, param, 0, fig );
+   %fig = figure();
+   fig = 0;
+   returnStruct = runRoutines( spline, param, 0, fig );
 end
 
-function slope = runRoutines( type, fn, randEnabled, fig )
+function returnStruct = runRoutines( type, fn, randEnabled, fig )
 
    % Initialization
    range = 2.^(3:0.25:9);
@@ -49,47 +49,49 @@ function slope = runRoutines( type, fn, randEnabled, fig )
    %plotErrorMain( range, errorMean, fig, 1 )
    %subplot( 2, 1, 2 )
    if( fig ~= 0 )
-      slope = plotErrorMain( range, errorMax, fig, 1 );
+      returnStruct = plotErrorMain( range, errorMean, errorMax, fig, 1 );
    else
-      slope = plotErrorMain( range, errorMax, fig, 0 );
+      returnStruct = plotErrorMain( range, errorMean, errorMax, fig, 0 );
    end
 end
 
-function slope = plotErrorMain( range, errorM, fig, plotEnabled )
+function returnStruct = plotErrorMain( range, errorMean, errorMax, fig, plotEnabled )
    % Plot error and retrieve fit of slope
-   slope = plotError( range, errorM, fig, plotEnabled );
+   returnStruct = plotError( range, errorMean, errorMax, fig, plotEnabled );
    
    if( plotEnabled )
       hold on;
       % Plot thin lines for all data
-      loglog( range, errorM  );
+      loglog( range, errorMax  );
    
       % Plot fixed slopes for visual comparison
       plotConstSlopes( fig, range );
    end
 end
 
-function fit = plotError( range, errorRow, fig, plotEnabled )
-   errorMeanTrunc = errorRow( errorRow > 10e-15 );
+function returnStruct = plotError( range, errorMean, errorMax, fig, plotEnabled )
+   errorMeanTrunc = errorMean( errorMean > 10e-15 );
    errorMeanTrunc( errorMeanTrunc == 0 ) = [];
    errLength = length( errorMeanTrunc );
-   errStart = 1;
-   %errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-3 )
-   %errStart = errLength - length( errorMeanTrunc );
-   %errLength = length( errorMeanTrunc );
+   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-3 );
+   errStart = errLength - length( errorMeanTrunc );
+   errLength = length( errorMeanTrunc );
    errRange = errStart:errLength;
    if( plotEnabled )
       figure(fig);
-      p = loglog( range( errRange ), errorRow( errRange ), 'b-' );
+      p = loglog( range( errRange ), errorMax( errRange ), 'b-' );
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
    end
-   [fit, S] = polyfit( log(range( errRange ) ), log( errorRow( errRange ) ), 1 );
+   [fit, S] = polyfit( log(range( errRange ) ), log( errorMax( errRange ) ), 1 );
    %z.fit = fit;
    %z.S = S;
    %fit = z;
    %fit = sum(errorRow(errRange));
-   fit = fit(1);
+   returnStruct.slope = fit(1);
+   returnStruct.maxErr = errorMax( length( errorMax ) );
+   returnStruct.meanErr = errorMean( length( errorMean ) );
+   returnStruct.residNorm = S.normr;
 end
 
 function plotConstSlopes( fig, range )

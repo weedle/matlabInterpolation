@@ -21,7 +21,7 @@ function cellStructs = filterMins( cellStructs )
 end
 
 function cellStructs = filterSlopes( cellStructs )
-    cellStructs = removeInvalid( cellStructs, 2, -8.5 );
+    cellStructs = removeInvalid( cellStructs, 2, -4 );
 end
 
 function cellStructs = removeInvalid( cellStructs, index, threshold )

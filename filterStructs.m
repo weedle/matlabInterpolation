@@ -1,11 +1,5 @@
-function [ cellStructs, structs ] = filterStructs( structs )
+function [ cellStructs, structs ] = filterStructs( structs, threshold )
     fields = fieldnames(structs);
-    
-    % Change this to control how strict we are about removing mutants
-    % A larger value allows for more mutants that tend to sacrifice 
-    % residual for slope
-    % Setting this to one seems to only leave redundant mutants
-    thresholdFactor = 1.5;
     
     % Sort by maxes
     [ cellStructs, ~ ] = sortStructs( structs, 4 );
@@ -13,18 +7,18 @@ function [ cellStructs, structs ] = filterStructs( structs )
     display( sprintf( 'Currently have %d mutants', sz(3) ) );
     
     % Remove all mutants with higher maximum errors
-    cellStructs = filterByIndex( cellStructs, 4, thresholdFactor*mode( [ cellStructs{4,:} ] ) );
+    cellStructs = filterByIndex( cellStructs, 4, threshold*mode( [ cellStructs{4,:} ] ) );
     
     sz = size(cellStructs);
     display( sprintf( 'Filtered by max: now have %d mutants', sz(3) ) );
     
     % Remove mutants with higher residuals
-    cellStructs = filterByIndex( cellStructs, 5, thresholdFactor*mode( [ cellStructs{5,:} ] ) );
+    cellStructs = filterByIndex( cellStructs, 5, threshold*mode( [ cellStructs{5,:} ] ) );
     sz = size(cellStructs);
     display( sprintf( 'Filtered by residual: now have %d mutants', sz(3) ) );
     
     % Remove mutants with higher slopes
-    cellStructs = filterByIndex( cellStructs, 2, thresholdFactor*mode( [ cellStructs{2,:} ] ) );
+    cellStructs = filterByIndex( cellStructs, 2, threshold*mode( [ cellStructs{2,:} ] ) );
     sz = size(cellStructs);
     display( sprintf( 'Filtered by slope: now have %d mutants', sz(3) ) );
     

@@ -1,71 +1,57 @@
 function [ cellStructs, structs ] = filterStructs( structs )
     fields = fieldnames(structs);
     
-    cellStructs = toCells( structs );
+    % Change this to control how strict we are about removing mutants
+    % A larger value allows for more mutants that tend to sacrifice 
+    % residual for slope
+    % Setting this to one seems to only leave redundant mutants
+    thresholdFactor = 1.5;
     
-    cellStructs = filterMaxes( cellStructs );
-
-    cellStructs = filterMins( cellStructs );
+    % Sort by maxes
+    [ cellStructs, ~ ] = sortStructs( structs, 4 );
+    sz = size(cellStructs);
+    display( sprintf( 'Currently have %d mutants', sz(3) ) );
     
-    cellStructs = filterSlopes( cellStructs );
+    % Remove all mutants with higher maximum errors
+    cellStructs = filterByIndex( cellStructs, 4, thresholdFactor*mode( [ cellStructs{4,:} ] ) );
+    
+    sz = size(cellStructs);
+    display( sprintf( 'Filtered by max: now have %d mutants', sz(3) ) );
+    
+    % Remove mutants with higher residuals
+    cellStructs = filterByIndex( cellStructs, 5, thresholdFactor*mode( [ cellStructs{5,:} ] ) );
+    sz = size(cellStructs);
+    display( sprintf( 'Filtered by residual: now have %d mutants', sz(3) ) );
+    
+    % Remove mutants with higher slopes
+    cellStructs = filterByIndex( cellStructs, 2, thresholdFactor*mode( [ cellStructs{2,:} ] ) );
+    sz = size(cellStructs);
+    display( sprintf( 'Filtered by slope: now have %d mutants', sz(3) ) );
     
     structs = cell2struct(cellStructs, fields, 1);
 end
 
-function cellStructs = filterMaxes( cellStructs )
-    cellStructs = removeInvalid( cellStructs, 3, 1 );
-end
-
-function cellStructs = filterMins( cellStructs )
-    cellStructs = removeInvalid( cellStructs, 4, 1 );
-end
-
-function cellStructs = filterSlopes( cellStructs )
-    cellStructs = removeInvalid( cellStructs, 2, -4 );
+function cellStructs = filterByIndex( cellStructs, index, threshold )
+    cellStructs = removeInvalid( cellStructs, index, threshold );
 end
 
 function cellStructs = removeInvalid( cellStructs, index, threshold )
+    slope = 0;
+    if( index == 2 )
+        slope = 1;
+    end
     values = [ cellStructs{ index,: } ];
     cellStructs( :,:,isnan( values ) ) = [];
-    cellStructs( :,:,( [ cellStructs{ index,1:length( cellStructs ) } ] > threshold ) ) = []; 
-    
-    %[ cellStructsMaxes{ 3,1:length( cellStructsMaxes ) } ] == Inf
-    %cellStructsMaxes( 3,1:length(cellStructsMaxes) )
+    if( slope )
+        cellStructs( :,:,( [ cellStructs{ index,1:length( cellStructs ) } ] < threshold ) ) = []; 
+    else
+        cellStructs( :,:,( [ cellStructs{ index,1:length( cellStructs ) } ] > threshold ) ) = []; 
+    end
 end
 
-function cellStructs = sortByMaxes( structs )
-    cellStructs = struct2cell(structs);
-    s = size(cellStructs);
-    
-    % Convert to a matrix
-    cellStructs = reshape(cellStructs, s(1), []);
-
-    % cellStructs is: name, slope, mean error, max error, residual norm
-    cellStructs = cellStructs';
-
-    % sort by slope
-    cellStructs = sortrows(cellStructs, 3);
-    
-    
-    % Put back into original cell array format
-    cellStructs = reshape(cellStructs', s);
-end
-
-function cellStructs = toCells( structs )
+function cellStructs = toCells( structs ) %#ok<DEFNU>
     cellStructs = struct2cell(structs);
     s = size(cellStructs);
     cellStructs = reshape(cellStructs, s(1), []);
     cellStructs = reshape(cellStructs, s);
-
-    % Convert to Struct
-    %structs = cell2struct(cellStructs, fields, 1);
-    
-    % get slopes
-    %slopes = [cellStructs{2,:}];
-    %maxes = [cellStructs{3,:}];
-    
-    %x = isnan( maxes );
-    %x = x | ( maxes > 1 );
-    % filter bad slopes;
-    %structs( x ) = [];
 end

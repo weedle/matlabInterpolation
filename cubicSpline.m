@@ -3,7 +3,7 @@ function yq = cubicSpline( x, y, xq )
 % cubicSpline( x, y, xq ) interpolates the data points (x,y) and provides the values
 % obtained when evaluating the interpolation at the points xq
 % This interpolation follows the implementation described in the
-% Burden-Faires text (p146)
+% Burden-Faires 7e text (p146)
    n = length(x);
    
    h = circshift( x, [0 -1] ) - x;

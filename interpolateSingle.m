@@ -73,15 +73,18 @@ function returnStruct = plotError( range, errorMean, errorMax, fig, plotEnabled 
    errorMeanTrunc = errorMean( errorMean > 10e-15 );
    errorMeanTrunc( errorMeanTrunc == 0 ) = [];
    errLength = length( errorMeanTrunc );
-   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-3 );
+   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-4 );
+   errorMeanTrunc( errorMeanTrunc == 0 ) = [];
    errStart = errLength - length( errorMeanTrunc );
-   errLength = length( errorMeanTrunc );
    errRange = errStart:errLength;
    if( plotEnabled )
       figure(fig);
       p = loglog( range( errRange ), errorMax( errRange ), 'b-' );
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
+      xlabel( 'Discretization' );
+      ylabel( 'Error' );
+      title( 'loglog of error at various discretizations' );
    end
    [fit, S] = polyfit( log(range( errRange ) ), log( errorMax( errRange ) ), 1 );
    %z.fit = fit;

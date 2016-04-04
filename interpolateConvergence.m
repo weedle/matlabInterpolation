@@ -43,9 +43,9 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
          randEnabled = 0;
          fig = figure();
          runRoutines( F(i,:), f, fig );
-         randEnabled = 1;
-         fig = figure();
-         runRoutines( F(i,:), f, fig );
+         %randEnabled = 1;
+         %fig = figure();
+         %runRoutines( F(i,:), f, fig );
       end
    elseif( strcmp( mode, 'plot derivs' ) == 1 )
       for i = 1:length( fns )

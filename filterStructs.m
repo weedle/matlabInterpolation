@@ -7,7 +7,7 @@ function [ cellStructs, structs ] = filterStructs( structs, threshold )
     display( sprintf( 'Currently have %d mutants', sz(3) ) );
     
     % Remove all mutants with higher maximum errors
-    cellStructs = filterByIndex( cellStructs, 4, threshold*mode( [ cellStructs{4,:} ] ) );
+    cellStructs = filterByIndex( cellStructs, 4, 1e5*threshold*mode( [ cellStructs{4,:} ] ) );
     
     sz = size(cellStructs);
     display( sprintf( 'Filtered by max: now have %d mutants', sz(3) ) );

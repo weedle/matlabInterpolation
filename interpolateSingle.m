@@ -73,7 +73,7 @@ function returnStruct = plotError( range, errorMean, errorMax, fig, plotEnabled 
    errorMeanTrunc = errorMean( errorMean > 10e-15 );
    errorMeanTrunc( errorMeanTrunc == 0 ) = [];
    errLength = length( errorMeanTrunc );
-   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-4 );
+   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-11 );
    errorMeanTrunc( errorMeanTrunc == 0 ) = [];
    errStart = errLength - length( errorMeanTrunc );
    errRange = errStart:errLength;

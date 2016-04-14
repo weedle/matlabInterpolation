@@ -1,4 +1,4 @@
-function returnStruct = interpolateConvergence( spline ) %#ok<*DEFNU>
+function returnStruct = interpolateConvergence( spline, fnIndex, plotFlag ) %#ok<*DEFNU>
 % INTERPOLATECONVERGENCE: Tests various convergent algorithms
 % interpolateConvergence( mode ) runs tests using various interpolation
 % methods, and displays convergence plots and error histograms
@@ -14,11 +14,16 @@ function returnStruct = interpolateConvergence( spline ) %#ok<*DEFNU>
 
 % Set random number generator to default
    rng('default')
-   set(0,'defaultfigureposition',[0 0 800 800]')
+   %set(0,'defaultfigureposition',[0 0 800 800]')
+   params = { 'poly8'; 'sin1'; 'sin2'; 'bessel1'; 'airy1' };
    
-   param = 'poly8';
-   %fig = figure();
-   fig = 0;
+   param = params{ fnIndex };
+   if( plotFlag )
+       fig = figure();
+   else
+       fig = 0;
+   end
+   
    returnStruct = runRoutines( spline, param, 0, fig );
 end
 
@@ -70,30 +75,47 @@ function returnStruct = plotErrorMain( range, errorMean, errorMax, fig, plotEnab
 end
 
 function returnStruct = plotError( range, errorMean, errorMax, fig, plotEnabled )
-   errorMeanTrunc = errorMean( errorMean > 10e-15 );
-   errorMeanTrunc( errorMeanTrunc == 0 ) = [];
-   errLength = length( errorMeanTrunc );
-   errorMeanTrunc = errorMeanTrunc( errorMeanTrunc < 10e-11 );
-   errorMeanTrunc( errorMeanTrunc == 0 ) = [];
-   errStart = errLength - length( errorMeanTrunc );
+   errorMeanTrunc = errorMean;
+   errorMaxTrunc = errorMax( errorMax > 10e-14 );
+   errorMaxTrunc( errorMaxTrunc == 0 ) = [];
+   errorMeanTrunc( errorMaxTrunc == 0 ) = [];
+   errorMeanTrunc( errorMaxTrunc == 0 ) = [];
+   errLength = length( errorMaxTrunc );
+   errorMaxTrunc = errorMaxTrunc( errorMaxTrunc < 10e-3 );
+   errorMaxTrunc( errorMaxTrunc == 0 ) = [];
+   errorMeanTrunc( errorMaxTrunc == 0 ) = [];
+   errStart = errLength - length( errorMaxTrunc );
    errRange = errStart:errLength;
+   if( length( errRange ) < 12 )
+      errStart = errStart - ( 12 - length( errRange ) ); 
+   end
+   errRange = errStart:errLength;
+   
+   [fit, S] = polyfit( log(range( errRange ) ), log( errorMax( errRange ) ), 1 );
+   i = 3;
+   while S.normr > 0.8 && length(errRange) > 12
+       errorMaxTrunc = errorMaxTrunc( errorMaxTrunc < 10^-(i) );
+       errorMaxTrunc( errorMaxTrunc == 0 ) = [];
+       errorMeanTrunc( errorMaxTrunc == 0 ) = [];
+       errStart = errLength - length( errorMaxTrunc );
+       errRange = errStart:errLength;
+       [fit, S] = polyfit( log(range( errRange ) ), log( errorMax( errRange ) ), 1 );
+       i = i+1;
+   end
+   
    if( plotEnabled )
       figure(fig);
-      p = loglog( range( errRange ), errorMax( errRange ), 'b-' );
+      p = loglog( range( errRange ), errorMax( errRange ), 'b.-' );
       set( p, 'LineWidth', 2 );
       set( p, 'MarkerSize', 10 );
       xlabel( 'Discretization' );
       ylabel( 'Error' );
       title( 'loglog of error at various discretizations' );
    end
-   [fit, S] = polyfit( log(range( errRange ) ), log( errorMax( errRange ) ), 1 );
-   %z.fit = fit;
-   %z.S = S;
-   %fit = z;
-   %fit = sum(errorRow(errRange));
+
    returnStruct.slope = fit(1);
-   returnStruct.maxErr = errorMax( length( errorMax ) );
-   returnStruct.meanErr = errorMean( length( errorMean ) );
+   returnStruct.maxErr = errorMax( errLength );
+   returnStruct.meanErr = errorMean( errLength );
    returnStruct.residNorm = S.normr;
 end
 
@@ -125,11 +147,8 @@ end
 
 function [ diffMean, diffMax, yq, yqDiff ] = interpolate( x, y, interp, xq, yqCorrect )
    
-   % The Call function for each interpolation allows us to call all
-   % interpolations through a common format, while allowing for extra
-   % parameters to be included when needed
-   
    yq = feval( interp, x, y, xq );
+   
    %figure;
    %hold on;
    %plot( x, y, 'r-' );
@@ -145,8 +164,17 @@ end
 
 % Functions to test
 function y = sinTest( x )
-   y = x .* sin( x / 8 );
+   y = x .* sin( x * 8 );
 end
+
+function y = sin1( x )
+   y = x .* sin( x * 8 );
+end
+
+function y = sin2( x )
+   y = ( 1 - x ).^3 .* cos( ( x - 0.4 ) * 12 );
+end
+
 
 function y = sinNormal( x )
    y = sin( x );
@@ -166,6 +194,14 @@ end
 
 function y = poly8( x )
    y = x.^8 - 35.*x.^7 + 14.*x.^5 - 105.*x.^3 + 5.*x.^2 + 75.*x + 31;
+end
+
+function y = bessel1( x )
+   y = besselj( 3, x*10 );
+end
+
+function y = airy1( x )
+   y = airy( x*10-5 );
 end
 
 function y = tanNormal( x )

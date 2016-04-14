@@ -1,4 +1,4 @@
-function sortAndPlotStructs( structs, index )
+function sortAndPlotStructs( interp, structs, index, threshold, fn )
    [ c, ~ ] = sortStructs( structs, index );
    
    plot( [ c{2,:} ], 'r.-' );
@@ -6,7 +6,7 @@ function sortAndPlotStructs( structs, index )
    plot( [ c{4,:} ], 'b.-' );
    plot( [ c{5,:} ], 'g.-' );
    
-   title( 'Slopes, maximum error, and residual for mutants' );
+   title( sprintf( 'threshold = %g', threshold ) );
    
    xlabel( 'Mutant' );
    ylabel( 'Value' );

@@ -100,7 +100,6 @@ function yq = quintic( x, y, xq )
       xqi = xq(i);
       j = length( x( x <= xqi ) );
       e = eta( xqi, x(j), h(j) );
-      %fprintf( '%d %d %d\n', x(j), xqi, x(j+1) );
       d0 = y(j) * s0( e ) + yp(j) * s0( 1 - e );
       d1 = yprime(j) * s1(e) - yprimep(j) * s1( 1 - e );
       d2 = ydoubleprime(j) * s2(e) + ydoubleprimep(j) * s2( 1 - e );

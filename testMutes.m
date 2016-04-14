@@ -1,4 +1,4 @@
-function [ cellStructs, structs ] = testMutes( spline )
+function [ cellStructs, structs ] = testMutes( spline, fnIndex )
 % TESTMUTES: This code will test the mutations created by matmute
 % testMutes takes a spline, and navigates to the file containing all
 % mutations created by running matmute. It then runs interpolateSingle on
@@ -41,7 +41,7 @@ function [ cellStructs, structs ] = testMutes( spline )
        fileNames{ j } = x;
        try
            yq = feval( x, 1:10, sin(1:10), 2:0.01:5 );
-           r = interpolateSingle( x );
+           r = interpolateSingle( x, fnIndex, 0 );
            structs( j ).name = x;
            structs( j ).slope = r.slope;
            structs( j ).max = r.maxErr;

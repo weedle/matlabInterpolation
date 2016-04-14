@@ -25,18 +25,12 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
    fns = getFns;
    F = [ 'f1'; 'f2'; 'f3'; 'f4'; 'f5' ];
       
-   if( strcmp( mode, 'histogram' ) == 1 )
-       mode = 'sinTest';
-      genHistograms( types, mode, str2func( mode ), 0 );
-      genHistograms( types, mode, str2func( mode ), 1 );
-   elseif( strcmp( mode, 'quintic' ) == 1 )
+   if( strcmp( mode, 'quintic' ) == 1 )
       types = { 'cubicSpline', 'spline', 'quintic' };
-      for i = length( fns )
-         f = fns{i};
-         fig = figure();
-         randEnabled = 0;
-         runRoutines( F(i,:), f, fig );
-      end
+      runRoutines( F(1,:), fns{1}, figure() );
+      runRoutines( F(3,:), fns{3}, figure() );
+      runRoutines( F(5,:), fns{5}, figure() );
+      runRoutines( 'f8', @poly8, figure() );
    elseif( strcmp( mode, 'derivs' ) == 1 )
       for i = 1:length( fns )
          f = fns{i};
@@ -69,18 +63,10 @@ function interpolateConvergence( mode ) %#ok<*DEFNU>
       getDomain( range, 0 );
       getDomain( range, 1 );
    elseif( strcmp( mode, 'histograms' ) == 1 )
-      fig = figure();
-      randEnabled = 0;
-      runRoutines( mode, @sinTest, fig );
-      fig = figure();
       randEnabled = 1;
-      runRoutines( mode, @sinTest, fig );
-      
-      
-      randEnabled = 0;
-      genHistograms( mode, @sinTest );
-      randEnabled = 1;
-      genHistograms( mode, @sinTest );
+      genHistograms( mode, @poly8 );
+      %randEnabled = 1;
+      %genHistograms( mode, @sinTest );
    else
       % mode is the string name of the function to test
       types = { mode };
@@ -147,13 +133,14 @@ function genHistograms( mode, fn )
    % xq is the set of query points
    xq = linspace( 0.1, 0.9, 1e2 );
    yqCorrect = fn( xq );
-   randTrials = 4000 * randEnabled + 1;
+   randTrials = 3000 * randEnabled + 1;
    
    for t = 1:length(types)
       histVals = [];
       histMeans = ones( 1, randTrials );
-      for r = 1:length(range)
          for j = 1:randTrials
+            r = 8;
+            %r = length(range);
             rng('shuffle')
             xVals = getDomain;
             x = xVals( r, 1:floor(range(r)) );
@@ -164,18 +151,17 @@ function genHistograms( mode, fn )
             % inefficient manner. Indexing it doesn't seem to be worth it
             % since this function runs pretty fast anyways. If speed
             % becomes an issue, I'll add proper indexing and preallocation
-            histVals = [ histVals yqDiff ]; %#ok<AGROW>
+            histVals = [ histVals abs(yqDiff) ]; %#ok<AGROW>
          end
-      end
       %fig = figure;
       %hist( histVals, 50 );    
       %plotHistLabels( fig, types{t}, range(r), mode, randEnabled );  
       if( randEnabled )
          fig = figure;
          hist( histMeans, 100 );
-         [H, pValue, W] = swtest( histMeans( 1:min( length( histMeans ), 5000 ) ) );
          display( types{t} );
-         display( pValue );
+         [H, pValue, W] = swtest( histMeans( 1:min( length( histMeans ), 5000 ) ) )
+         %display( pValue );
          plotHistLabels( fig, types{t}, range(r), sprintf( '%s means', mode ), randEnabled );  
       end
    end
@@ -265,7 +251,7 @@ function xVals = getDomain()
    global range;
    global randEnabled;
    xVals = 0 * ones( length( range ),  range( length( range ) ) );
-   separationFactor = 4;
+   separationFactor = 2;
    for r = 1:length(range)
       f = floor( range(r) );
       xVals( r, 1:floor(range(r)) ) = -cos( ( 2.*(1:f) - 1 ) ./ ( 2*f ) * pi )/2+0.5;
@@ -280,7 +266,7 @@ function xVals = getDomain()
    end
 end
 
-function  fns = getFns
+function fns = getFns
    mid = 0.43;
    syms x
    a1(x) = 3 .* sin(20.*x) + 8;
@@ -311,7 +297,7 @@ function  fns = getFns
    fns = { f1, f2, f3, f4, f5 };
 end
 
-function  fns = getFnsPoly
+function fns = getFnsSin
    mid = 0.5;
    syms x
    c1(x) = 3 .* sin(20.*x) + 8;
@@ -360,9 +346,7 @@ function yq = pchipCall( x, y, xq )
 end
 
 function yq = cubicSplineCall( x, y, xq )
-   fpo = ( y(2) - y(1) ) / ( x(2) - x(1) );
-   fpn = ( y(length(y)) - y(length(y)-1) ) / ( x(length(x)) - x(length(x)-1) );
-   yq = feval( 'cubicComplete', x, y, xq, fpo, fpn );
+   yq = feval( 'cubicComplete', x, y, xq );
 end
 
 function yq = quinticCall( x, y, xq )
@@ -371,7 +355,7 @@ end
 
 % Functions to test
 function y = sinTest( x )
-   y = x .* sin( x / 8 );
+   y = x .* sin( x * 20 );
 end
 
 function y = sinNormal( x )
